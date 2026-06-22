@@ -36,7 +36,7 @@ int main ()
 	// int bind(int sockfd, struct sockaddr *my_addr, int addrlen);
 	// int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
-	struct pollfd fds[FD_SETSIZE]; // More if you want to monitor more
+	struct pollfd *fds = malloc(sizeof *fds * 5);
 
     fds[0].fd = sockfd;          // Standard input
     fds[0].events = POLLIN; 	// Tell me when ready to read
@@ -44,17 +44,10 @@ int main ()
 
 	printf("listening...\n");
 
-	// void broadcast(int fd) {
-	// 	for (int i = 0; i < nfds; i++){
-	// 		if (fd != fds[i].fd)
-	// 			send(fds[i].fd);
-	// 	}
-	// }
-
 	while (1){
 		int num_events = poll(fds, nfds, -1);
 
-		if (nfds == -1) {
+		if (num_events == -1) {
             perror("poll");
             exit(1);
         }
@@ -71,14 +64,28 @@ int main ()
 					fds[nfds].fd = connfd;
 					fds[nfds].events = POLLIN;
 					nfds++;
-					sprintf(sendbuf, "server: client %d just arrived\n", nfds);
-					printf("server: client %d just arrived\n", nfds);
+					sprintf(sendbuf, "server: client %d just arrived\n", i);
+					printf("server: client %d just arrived\n", i);
 				}
 				else {
 					int nbytes = recv(fds[i].fd, recvbuf, sizeof recvbuf, 0);
     				int sender_fd = fds[i].fd;
 					if (nbytes <= 0) { // Got error or connection closed by client
+						printf(" Got error or connection closed by client %d\n", i);
+					}
+					else {
+						// There is something to read.
+						printf("pollserver: recv from fd %d: %.*s", sender_fd, nbytes, recvbuf);
+						// Send to everyone!
+						// for(int j = 0; j < nfds; j++) {
+						// 	int dest_fd = fds[j].fd;
 
+						// 	// Except the listener and ourselves
+						// 	if (dest_fd != sockfd && dest_fd != sender_fd) {
+						// 		if (send(dest_fd, recvbuf, nbytes, 0) == -1) {
+						// 			perror("send");
+						// 		}
+					}
 					//handle client data. read and broadcast.
 				}
 
@@ -103,4 +110,5 @@ int main ()
 
     return 0;
 
+	}
 }
