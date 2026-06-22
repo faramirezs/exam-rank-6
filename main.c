@@ -72,12 +72,30 @@ int main()
 		printf("Socket successfully created..\n");
 	bzero(&servaddr, sizeof(servaddr));
 
-	// assign IP, PORT
+	// assign IP, PORT old way
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(2130706433); // 127.0.0.1
+	servaddr.sin_addr.s_addr = htonl(2130706433); // 127.0.0.1 inet_addr("127.0.0.1");
 	servaddr.sin_port = htons(8081);
 
+	// new way
+	// struct addrinfo hints, *res;
+	// int sockfd;
+
+	// // first, load up address structs with getaddrinfo():
+
+	// memset(&hints, 0, sizeof hints);
+	// hints.ai_family = AF_UNSPEC;  // use IPv4 or IPv6, whichever
+	// hints.ai_socktype = SOCK_STREAM;
+	// hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
+
+	// getaddrinfo(NULL, "3490", &hints, &res);
+
+	// // make a socket:
+	// sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	// // bind it to the port we passed in to getaddrinfo():
+	// bind(sockfd, res->ai_addr, res->ai_addrlen);
 	// Binding newly created socket to given IP and verification
+
 	if ((bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr))) != 0)
 	{
 		printf("socket bind failed...\n");
