@@ -62,11 +62,13 @@ typedef struct t_client {
 } s_client;
 struct pollfd fds[1024];
 struct t_client clients[1034];
+
 void broadcast(int clientfd) {
   for (int i = 0; i < nfds; i++) {
     int fd = fds[i].fd;
     if (fd != clientfd)
-      send(fd, sendbuf, sizeof sendbuf, 0);
+      send(fd, sendbuf, sizeof sendbuf,
+           0); // It seems that it can't send to server.
   }
 }
 
@@ -79,7 +81,7 @@ int main() {
   // check socket creation
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(2130706433);
-  servaddr.sin_port = htons(8080);
+  servaddr.sin_port = htons(8081);
 
   if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof servaddr) < 0) {
     close(sockfd);
@@ -128,10 +130,12 @@ int main() {
             fds[nfds].fd = connfd;
             fds[nfds].events = POLLIN;
             nfds++;
-            clients[connfd].id = id++;
+            clients[connfd].id = ++id;
             sprintf(sendbuf, "server: client %d just arrived\n",
                     clients[connfd].id);
-            printf("server debug: client %d just arrived\n", nfds);
+            printf("server debug: client %d just arrived\n",
+                   clients[connfd].id);
+            broadcast(connfd);
           }
         } else { // There is a client sending.
           int nbytes = recv(fds[i].fd, recvbuf, sizeof recvbuf, 0);
@@ -141,6 +145,7 @@ int main() {
                    clients[sender_fd].id);
             sprintf(sendbuf, "server: client %d just left\n",
                     clients[sender_fd].id);
+            broadcast(sender_fd);
             close(fds[i].fd);
             fds[i] = fds[nfds - 1];
             nfds--;
@@ -156,6 +161,7 @@ int main() {
             char *msg;
             while (extract_message(&clients[sender_fd].buf, &msg)) {
               sprintf(sendbuf, "client %d: %s", clients[sender_fd].id, msg);
+              printf("server debug: recv from fd\n");
               broadcast(sender_fd);
               free(msg);
             }
